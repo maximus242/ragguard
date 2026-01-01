@@ -1,0 +1,42 @@
+version: "1"
+
+# Attribute-based access control rules
+rules:
+  # Public docs - everyone can see
+  - name: "public-docs"
+    match:
+      visibility: "public"
+    allow:
+      everyone: true
+
+  # Department-scoped docs (non-confidential)
+  - name: "department-docs"
+    match:
+      type: "internal"
+      confidential: false
+    allow:
+      conditions:
+        - user.department == document.department
+
+  # Confidential docs - only managers in same department
+  - name: "confidential-docs"
+    match:
+      confidential: true
+    allow:
+      roles: ["manager", "director"]
+      conditions:
+        - user.department == document.department
+
+  # Shared docs - explicit user access
+  - name: "shared-docs"
+    allow:
+      conditions:
+        - user.id in document.shared_with
+
+  # Admin access - see everything
+  - name: "admin-all-access"
+    allow:
+      roles: ["admin"]
+
+# Default deny - if no rule matches, deny access
+default: deny

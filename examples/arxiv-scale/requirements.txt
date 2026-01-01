@@ -1,0 +1,25 @@
+# RAGGuard with all vector database backends
+ragguard[all]
+
+# Embedding models
+sentence-transformers>=2.2.0
+
+# Vector databases
+qdrant-client>=1.7.0
+psycopg2-binary>=2.9.0
+
+# API and CLI
+fastapi>=0.104.0
+uvicorn>=0.24.0
+rich>=13.0.0
+
+# Progress bars and utilities
+tqdm>=4.66.0
+numpy>=1.24.0
+
+# PDF processing (for full PDF mode)
+PyPDF2>=3.0.0
+
+# Benchmarking
+matplotlib>=3.7.0
+pandas>=2.0.0

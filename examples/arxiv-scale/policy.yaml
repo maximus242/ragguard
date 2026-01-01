@@ -1,0 +1,27 @@
+version: "1"
+
+rules:
+  # Researchers can access papers from their institution
+  - name: "institution-access"
+    allow:
+      conditions:
+        - "user.institution == document.institution"
+
+  # Everyone can access public papers
+  - name: "public-access"
+    allow:
+      conditions:
+        - "document.access_level == 'public'"
+
+  # Admins and reviewers have full access
+  - name: "admin-access"
+    allow:
+      roles: ["admin", "reviewer"]
+
+  # Users can access papers they've been explicitly granted access to
+  - name: "explicit-grant"
+    allow:
+      conditions:
+        - "user.id in document.granted_users"
+
+default: "deny"

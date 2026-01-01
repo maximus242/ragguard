@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=vectordb
+      - POSTGRES_USER=ragguard
+      - POSTGRES_PASSWORD=ragguard_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init_pgvector.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ragguard -d vectordb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ragguard
+
+  # Example Python app using RAGGuard with pgvector
+  ragguard-app:
+    build:
+      context: ../
+      dockerfile: examples/Dockerfile.example
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://ragguard:ragguard_password@postgres:5432/vectordb
+      - POLICY_FILE=/app/examples/policies/example_policy.yaml
+    volumes:
+      - ../:/app
+    networks:
+      - ragguard
+    command: python examples/quickstart_pgvector.py
+
+volumes:
+  postgres_data:
+
+networks:
+  ragguard:
+    driver: bridge

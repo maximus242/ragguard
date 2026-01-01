@@ -1,0 +1,15 @@
+version: "1"
+default: deny
+
+rules:
+  # Public documents - everyone can access
+  - name: "public-docs"
+    allow:
+      conditions:
+        - "document.visibility == 'public'"
+
+  # Department documents - department members can access internal docs
+  - name: "department-internal"
+    allow:
+      conditions:
+        - "user.department == document.department AND (document.visibility == 'internal' OR document.visibility == 'private')"

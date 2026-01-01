@@ -1,0 +1,9 @@
+{
+  "query": "What is my blood pressure?",
+  "user": {
+    "id": "john.smith@email.com",
+    "roles": ["patient"],
+    "patient_id": "P001"
+  },
+  "limit": 3
+}

@@ -1,0 +1,303 @@
+# RAGGuard FastAPI Application with Pgvector
+# This example shows deployment with PostgreSQL/pgvector backend and connection pooling
+
+---
+# ConfigMap for RAGGuard Policy
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ragguard-policy
+  namespace: default
+data:
+  policy.yaml: |
+    version: "1"
+
+    rules:
+      # Public documents - everyone can see
+      - name: "public-docs"
+        match:
+          public: true
+        allow:
+          everyone: true
+
+      # Department documents - same department only
+      - name: "department-docs"
+        allow:
+          conditions:
+            - user.department == document.department
+
+      # Admin gets everything
+      - name: "admin-access"
+        allow:
+          roles: ["admin"]
+
+    default: deny
+
+---
+# Secret for PostgreSQL connection
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-credentials
+  namespace: default
+type: Opaque
+stringData:
+  # PostgreSQL connection string
+  database-url: "postgresql://ragguard:your-password@postgres:5432/ragguard"
+
+---
+# Deployment for RAGGuard FastAPI Application
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ragguard-api
+  namespace: default
+  labels:
+    app: ragguard-api
+    version: v1
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: ragguard-api
+  template:
+    metadata:
+      labels:
+        app: ragguard-api
+        version: v1
+    spec:
+      containers:
+      - name: api
+        image: your-registry/ragguard-api:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+
+        env:
+        # PostgreSQL connection settings
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: postgres-credentials
+              key: database-url
+
+        # Connection pool settings
+        - name: PGVECTOR_POOL_SIZE
+          value: "10"
+        - name: PGVECTOR_MAX_OVERFLOW
+          value: "20"
+        - name: PGVECTOR_POOL_TIMEOUT
+          value: "30"
+        - name: PGVECTOR_POOL_RECYCLE
+          value: "3600"
+
+        # RAGGuard settings
+        - name: RAGGUARD_POLICY_PATH
+          value: "/etc/ragguard/policy.yaml"
+        - name: RAGGUARD_ENABLE_CACHE
+          value: "true"
+        - name: RAGGUARD_CACHE_SIZE
+          value: "2000"
+        - name: RAGGUARD_ENABLE_VALIDATION
+          value: "true"
+        - name: RAGGUARD_ENABLE_RETRY
+          value: "true"
+
+        volumeMounts:
+        - name: policy
+          mountPath: /etc/ragguard
+          readOnly: true
+
+        # Resource limits
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+
+        # Liveness probe - checks if container is alive
+        livenessProbe:
+          httpGet:
+            path: /health/liveness
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+          successThreshold: 1
+
+        # Readiness probe - checks if container can serve traffic
+        readinessProbe:
+          httpGet:
+            path: /health/readiness
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+          successThreshold: 1
+
+        # Startup probe - gives slow-starting containers time
+        startupProbe:
+          httpGet:
+            path: /health/liveness
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 12  # 60 seconds max startup time
+
+      volumes:
+      - name: policy
+        configMap:
+          name: ragguard-policy
+
+      # Security context
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+
+---
+# Service to expose the RAGGuard API
+apiVersion: v1
+kind: Service
+metadata:
+  name: ragguard-api
+  namespace: default
+  labels:
+    app: ragguard-api
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 8000
+    protocol: TCP
+    name: http
+  selector:
+    app: ragguard-api
+
+---
+# PostgreSQL StatefulSet (for demo - use managed DB in production)
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: default
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: pgvector/pgvector:pg16
+        ports:
+        - containerPort: 5432
+          name: postgres
+        env:
+        - name: POSTGRES_USER
+          value: "ragguard"
+        - name: POSTGRES_PASSWORD
+          value: "your-password"
+        - name: POSTGRES_DB
+          value: "ragguard"
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 10Gi
+
+---
+# PostgreSQL Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: default
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5432
+    targetPort: 5432
+    protocol: TCP
+    name: postgres
+  selector:
+    app: postgres
+
+---
+# HorizontalPodAutoscaler for auto-scaling based on CPU/memory
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ragguard-api-hpa
+  namespace: default
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ragguard-api
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 50
+        periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 30
+
+---
+# PodDisruptionBudget for high availability
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ragguard-api-pdb
+  namespace: default
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: ragguard-api

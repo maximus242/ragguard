@@ -1,0 +1,18 @@
+version: "1"
+default: deny
+
+rules:
+  # Public documents - everyone can access
+  - name: "public-docs"
+    allow:
+      conditions:
+        - "document.visibility == 'public'"
+
+  # Department internal documents - department members only
+  - name: "department-docs"
+    allow:
+      conditions:
+        - "user.department == document.department AND (document.visibility == 'internal' OR document.visibility == 'private')"
+
+# Note: For admin access in production, consider using a separate permission system
+# or modify documents to include an authorized_users field that admins are added to

@@ -1,0 +1,8 @@
+# RAGGuard with Qdrant support
+ragguard[qdrant]==0.3.0
+
+# For other vector databases, use:
+# ragguard[chromadb]==0.3.0
+# ragguard[pgvector]==0.3.0
+# ragguard[weaviate]==0.3.0
+# ragguard[pinecone]==0.3.0

@@ -1,0 +1,295 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ragguard"
+version = "0.3.1"
+description = "Permission-aware retrieval for RAG applications"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "Apache-2.0"}
+authors = [
+    {name = "RAGGuard Contributors"}
+]
+keywords = ["rag", "retrieval", "permissions", "security", "vector-database"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+    "Topic :: Database",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Typing :: Typed",
+]
+
+dependencies = [
+    "pydantic>=2.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+# Vector database backends
+qdrant = ["qdrant-client>=1.7"]
+pgvector = ["psycopg2-binary>=2.9", "pgvector>=0.2"]
+weaviate = ["weaviate-client>=3.0"]
+pinecone = ["pinecone>=5.0.0"]
+chromadb = ["chromadb>=0.4.0"]
+milvus = ["pymilvus>=2.3.0"]
+faiss = ["faiss-cpu>=1.7.4"]
+elasticsearch = ["elasticsearch>=8.0.0"]
+opensearch = ["opensearch-py>=2.0.0"]
+azure = ["azure-search-documents>=11.4.0"]
+
+# Graph database backends
+neo4j = ["neo4j>=5.0.0"]
+neptune = ["gremlinpython>=3.6.0"]
+tigergraph = ["pyTigerGraph>=1.0.0"]
+arangodb = ["python-arango>=7.0.0"]
+
+# Framework integrations
+langchain = ["langchain>=0.1.0", "langchain-core>=0.1.0"]
+llamaindex = ["llama-index>=0.9.0"]
+crewai = ["crewai>=0.28.0"]
+autogen = ["pyautogen>=0.2.0"]
+dspy = ["dspy-ai>=2.0.0"]
+
+# Identity providers (IAM)
+google = [
+    "google-auth>=2.0",
+    "google-auth-oauthlib>=1.0",
+    "google-auth-httplib2>=0.1",
+    "google-api-python-client>=2.0"
+]
+
+# Combined extras
+all = [
+    # Vector databases
+    "qdrant-client>=1.7",
+    "psycopg2-binary>=2.9",
+    "pgvector>=0.2",
+    "weaviate-client>=3.0",
+    "pinecone>=5.0.0",
+    "chromadb>=0.4.0",
+    "pymilvus>=2.3.0",
+    "faiss-cpu>=1.7.4",
+    "elasticsearch>=8.0.0",
+    "opensearch-py>=2.0.0",
+    "azure-search-documents>=11.4.0",
+    # Graph databases
+    "neo4j>=5.0.0",
+    "gremlinpython>=3.6.0",
+    "pyTigerGraph>=1.0.0",
+    "python-arango>=7.0.0",
+    # Framework integrations
+    "langchain>=0.1.0",
+    "langchain-core>=0.1.0",
+    "llama-index>=0.9.0",
+    "crewai>=0.28.0",
+    "pyautogen>=0.2.0",
+    "dspy-ai>=2.0.0",
+    # Identity providers
+    "google-auth>=2.0",
+    "google-auth-oauthlib>=1.0",
+    "google-auth-httplib2>=0.1",
+    "google-api-python-client>=2.0"
+]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.23",
+    "pytest-cov>=4.0",
+    "mypy>=1.8.0",
+    "ruff>=0.1.0",
+    "bandit>=1.7.0",
+    "types-PyYAML>=6.0",
+    "types-requests>=2.31",
+]
+
+[project.scripts]
+ragguard = "ragguard.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/maximus242/ragguard"
+Documentation = "https://github.com/maximus242/ragguard#readme"
+Repository = "https://github.com/maximus242/ragguard"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ragguard*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+    "asyncio: marks tests as async (deselect with '-m \"not asyncio\"')",
+    "integration: marks tests as integration tests (require docker-compose)",
+    "unit: marks tests as unit tests (no external dependencies)",
+    "slow: marks tests as slow running (deselect with '-m \"not slow\"')",
+    "qdrant: marks tests requiring Qdrant database",
+    "chromadb: marks tests requiring ChromaDB",
+    "pgvector: marks tests requiring PostgreSQL with pgvector",
+    "weaviate: marks tests requiring Weaviate",
+    "faiss: marks tests requiring FAISS",
+    "concurrent: marks concurrent/threading tests",
+    "performance: marks performance benchmark tests",
+    "benchmark: marks performance benchmark tests (inherently flaky, skipped in CI)",
+    "consistency: marks cross-backend consistency tests",
+]
+# Default to running all tests unless markers are specified
+addopts = "-v --strict-markers"
+# Filter out expected warnings to keep test output clean
+filterwarnings = [
+    # Ignore pymilvus deprecation warnings (third-party library)
+    "ignore:.*asyncio.iscoroutinefunction.*:DeprecationWarning:pymilvus",
+    # Ignore FAISS post-filtering UserWarning (expected behavior)
+    "ignore:FAISSSecureRetriever uses post-filtering:UserWarning",
+    # Ignore Qdrant client version check warnings (expected without server)
+    "ignore:Failed to obtain server version:UserWarning",
+]
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = false  # Too many false positives with Any types
+warn_unused_ignores = false  # Allow type: ignore without warning
+warn_redundant_casts = true
+warn_unused_configs = true
+disallow_untyped_defs = false  # Gradual typing
+disallow_incomplete_defs = false
+check_untyped_defs = false  # Skip checking untyped function bodies
+ignore_missing_imports = true
+show_error_codes = true
+pretty = true
+strict_optional = false  # Disable strict Optional checking
+# Disable these checks that cause false positives in our codebase
+disable_error_code = [
+    "override",      # Method signature overrides (Liskov) - intentional in subclasses
+    "attr-defined",  # Attribute access on dynamic types - third party clients
+    "no-redef",      # Variable redefinition - intentional in some patterns
+    "arg-type",      # Argument type mismatches - tuple/list compatibility
+    "assignment",    # Dict assignment with mixed types - health_info patterns
+    "index",         # Indexing issues - often with TypedDict
+    "call-arg",      # Call argument mismatches - third party libs (LangChain)
+    "return-value",  # Return value mismatches - sentinel patterns
+]
+
+# Ignore third-party stubs we don't have
+[[tool.mypy.overrides]]
+module = [
+    "qdrant_client.*",
+    "chromadb.*",
+    "weaviate.*",
+    "pinecone.*",
+    "pymilvus.*",
+    "faiss.*",
+    "elasticsearch.*",
+    "opensearchpy.*",
+    "azure.*",
+    "langchain.*",
+    "langchain_core.*",
+    "langgraph.*",
+    "llama_index.*",
+    "mcp.*",
+    "crewai.*",
+    "google.*",
+    "psycopg2.*",
+    "pgvector.*",
+    "arango.*",
+    "neo4j.*",
+    "gremlin_python.*",
+    "pyTigerGraph.*",
+    "boto3.*",
+    "botocore.*",
+]
+ignore_missing_imports = true
+
+[tool.ruff]
+target-version = "py39"
+line-length = 100
+exclude = [
+    ".git",
+    ".venv",
+    "__pycache__",
+    "build",
+    "dist",
+    "*.egg-info",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "UP",     # pyupgrade
+    "S",      # flake8-bandit (security)
+    "T20",    # flake8-print
+    "SIM",    # flake8-simplify
+    "RUF",    # Ruff-specific rules
+]
+ignore = [
+    "E501",   # Line too long (handled by formatter)
+    "S101",   # Use of assert (fine in tests)
+    "S104",   # Possible binding to all interfaces
+    "S105",   # Hardcoded password (false positives in tests)
+    "S106",   # Hardcoded password (false positives in tests)
+    "B008",   # Function call in default argument (common pattern)
+    "UP007",  # Use X | Y for Union (need to support Python 3.9)
+    "UP035",  # Deprecated typing imports - needed for Python 3.9 compatibility
+    "UP006",  # Use dict instead of Dict - needed for Python 3.9 compatibility
+    "SIM102", # Nested if statements - sometimes more readable
+    "RUF022", # Unsorted __all__ - not critical
+    "RUF013", # Implicit Optional - we use explicit Optional already
+    "E402",   # Module imports not at top - needed for optional dependencies
+    "B904",   # Raise from - many intentional cases
+    "F841",   # Unused variable - sometimes needed for unpacking
+    "SIM103", # Return condition directly - sometimes less readable
+    "RUF012", # ClassVar annotation - pydantic handles this
+    "RUF059", # Unused unpacked variable - sometimes intentional
+    "UP045",  # Use X | None - needed for Python 3.9 compatibility
+    "B007",   # Unused loop variable - sometimes intentional
+    "B027",   # Empty method in ABC - often intentional for optional override
+    "SIM108", # Ternary operator - sometimes less readable
+    "SIM110", # Use all() - sometimes less readable
+    "SIM105", # contextlib.suppress - often less clear
+    "C403",   # Unnecessary list comprehension - readability
+    "RUF005", # Iterable unpacking - readability
+    "E741",   # Ambiguous variable name - sometimes intentional
+    "S110",   # try-except-pass - sometimes intentional
+    "S311",   # Random for non-crypto - we use it for jitter, not security
+    "S608",   # SQL injection - false positives for controlled table/column names
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "S105", "S106", "T20"]  # Allow assert/print in tests
+"**/test_*.py" = ["S101", "S105", "S106", "T20"]
+"ragguard/cli.py" = ["T201"]  # CLI needs print statements
+"ragguard/audit/logger.py" = ["T201"]  # Audit logger uses print for console output
+"ragguard/metrics/exporters.py" = ["T201"]  # Metrics exporters print metrics
+"ragguard/testing/tester.py" = ["T201"]  # Test runner prints results
+"ragguard/testing/coverage.py" = ["T201"]  # Coverage reporter prints results
+"ragguard/policy/validator.py" = ["T201"]  # Validator prints validation results
+"ragguard/__init__.py" = ["F401"]  # Re-exports are intentional
+"ragguard/*/__init__.py" = ["F401"]  # Re-exports are intentional
+"ragguard/retrievers/*.py" = ["F401"]  # Optional dependency availability checks
+
+[tool.ruff.lint.isort]
+known-first-party = ["ragguard"]
+
+[tool.bandit]
+exclude_dirs = ["tests", ".venv", "build", "dist"]
+skips = [
+    "B101",  # assert_used - OK in non-test code for invariants
+    "B104",  # hardcoded_bind_all_interfaces - often intentional
+]
+targets = ["ragguard"]

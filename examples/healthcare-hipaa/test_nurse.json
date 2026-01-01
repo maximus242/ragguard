@@ -1,0 +1,9 @@
+{
+  "query": "Show cardiology patient medications",
+  "user": {
+    "id": "nurse.davis@hospital.com",
+    "roles": ["nurse"],
+    "department": "cardiology"
+  },
+  "limit": 3
+}

@@ -1,0 +1,5 @@
+{"timestamp": "2025-12-19T14:09:51.664656Z", "user_id": "john.smith@email.com", "user_roles": ["patient"], "query": "What is my blood pressure?", "results_returned": 3, "filter": "{'patient_id': {'$eq': 'P001'}}"}
+{"timestamp": "2025-12-19T14:10:09.362314Z", "user_id": "dr.williams@hospital.com", "user_roles": ["doctor"], "query": "Show recent patient visits", "results_returned": 3, "filter": "{'assigned_doctor': {'$eq': 'dr.williams@hospital.com'}}"}
+{"timestamp": "2025-12-19T14:10:22.861687Z", "user_id": "nurse.davis@hospital.com", "user_roles": ["nurse"], "query": "Show cardiology patient medications", "results_returned": 3, "filter": "{'department': {'$eq': 'cardiology'}}"}
+{"timestamp": "2025-12-19T14:10:35.345764Z", "user_id": "admin.brown@hospital.com", "user_roles": ["admin"], "query": "Show all patient records", "results_returned": 0, "filter": "{'_impossible_field': {'$eq': 'impossible_value_12345'}}"}
+{"timestamp": "2025-12-19T14:11:58.815018Z", "user_id": "admin.brown@hospital.com", "user_roles": ["admin"], "query": "Show all patient records", "results_returned": 5, "filter": "None"}

@@ -1,0 +1,201 @@
+# RAGGuard OR Logic Patterns
+#
+# This file demonstrates various OR logic patterns available in v0.3.0.
+# Use these patterns as templates for your own access control policies.
+#
+# Key Features:
+# - OR and AND operators (case-insensitive)
+# - Parentheses for grouping
+# - Operator precedence (OR < AND)
+# - Unlimited nesting depth
+# - Backward compatible with v0.2.0
+
+version: "1"
+
+rules:
+  # ============================================================================
+  # Pattern 1: Multiple Role Access
+  # ============================================================================
+  # Use case: Grant access to users with any of several roles
+  - name: "senior-staff"
+    allow:
+      conditions:
+        - "(user.role == 'admin' OR user.role == 'manager' OR user.role == 'owner')"
+
+  # ============================================================================
+  # Pattern 2: Shared OR Public Documents
+  # ============================================================================
+  # Use case: Access if explicitly shared with user OR document is public
+  - name: "shared-or-public"
+    allow:
+      conditions:
+        - "user.id in document.shared_with OR document.visibility == 'public'"
+
+  # ============================================================================
+  # Pattern 3: Department OR Ownership
+  # ============================================================================
+  # Use case: Access if in same department OR user owns the document
+  - name: "dept-or-owner"
+    allow:
+      conditions:
+        - "user.department == document.department OR user.id == document.owner_id"
+
+  # ============================================================================
+  # Pattern 4: Role-Based OR High-Level Access
+  # ============================================================================
+  # Use case: Access if user has specific role OR is high-level employee
+  - name: "manager-or-senior"
+    allow:
+      conditions:
+        - "user.role == 'manager' OR user.level >= 8"
+
+  # ============================================================================
+  # Pattern 5: Complex Nested - (Role) AND Status
+  # ============================================================================
+  # Use case: Access if (admin OR manager) AND document is published
+  - name: "senior-published-only"
+    allow:
+      conditions:
+        - "(user.role == 'admin' OR user.role == 'manager') AND document.status == 'published'"
+
+  # ============================================================================
+  # Pattern 6: Three-Way OR
+  # ============================================================================
+  # Use case: Access via department match, sharing, or ownership
+  - name: "flexible-access"
+    allow:
+      conditions:
+        - "user.department == document.department OR user.id in document.shared_with OR user.id == document.owner_id"
+
+  # ============================================================================
+  # Pattern 7: Multiple Conditions with OR
+  # ============================================================================
+  # Use case: Complex multi-condition access control
+  # Note: Multiple condition strings are still combined with AND
+  #       Use OR within a single condition string for OR logic
+  - name: "complex-multi-condition"
+    allow:
+      conditions:
+        # This condition must be true (admin OR manager)
+        - "(user.role == 'admin' OR user.role == 'manager')"
+        # AND this condition must be true (published OR reviewed)
+        - "(document.status == 'published' OR document.reviewed == true)"
+        # AND this condition must be true (not archived)
+        - "document.archived != true"
+
+  # ============================================================================
+  # Pattern 8: Location-Based OR
+  # ============================================================================
+  # Use case: Access if user is in specific locations OR has remote_access flag
+  - name: "location-or-remote"
+    allow:
+      conditions:
+        - "user.location in ['NYC', 'SF', 'London'] OR user.remote_access == true"
+
+  # ============================================================================
+  # Pattern 9: Time-Sensitive OR Owner
+  # ============================================================================
+  # Use case: Access if not expired OR user is the owner
+  # Note: Comparison operators (>, <, >=, <=) work with OR logic
+  - name: "active-or-owner"
+    allow:
+      conditions:
+        - "document.expires_at > 1735689600 OR user.id == document.owner_id"
+
+  # ============================================================================
+  # Pattern 10: Field Existence OR Alternative
+  # ============================================================================
+  # Use case: Access if field doesn't exist OR meets certain criteria
+  - name: "no-sensitivity-or-approved"
+    allow:
+      conditions:
+        - "document.sensitivity not exists OR user.clearance_level >= document.sensitivity"
+
+  # ============================================================================
+  # Pattern 11: Deeply Nested Expression
+  # ============================================================================
+  # Use case: Complex boolean logic with multiple levels of nesting
+  - name: "deeply-nested"
+    allow:
+      conditions:
+        - "((user.role == 'admin' OR user.role == 'manager') AND document.status == 'published') OR user.id == document.owner_id"
+
+  # ============================================================================
+  # Pattern 12: NOT IN with OR
+  # ============================================================================
+  # Use case: Access if role is NOT in excluded list OR has special permission
+  - name: "not-blocked-or-special"
+    allow:
+      conditions:
+        - "user.role not in ['guest', 'suspended'] OR user.special_access == true"
+
+  # ============================================================================
+  # Pattern 13: Multiple Department Access
+  # ============================================================================
+  # Use case: Access if user is in any of several departments
+  - name: "engineering-or-product-or-research"
+    allow:
+      conditions:
+        - "(user.department == 'engineering' OR user.department == 'product' OR user.department == 'research')"
+
+  # ============================================================================
+  # Pattern 14: Combining Array Operations with OR
+  # ============================================================================
+  # Use case: Access via team membership OR project membership
+  - name: "team-or-project-member"
+    allow:
+      conditions:
+        - "user.id in document.team_members OR user.id in document.project_contributors"
+
+  # ============================================================================
+  # Pattern 15: Default Access with Exceptions
+  # ============================================================================
+  # Use case: Grant access to everyone EXCEPT certain conditions
+  - name: "public-except-sensitive"
+    allow:
+      conditions:
+        # Access if: (not sensitive) OR (sensitive AND user has clearance)
+        - "(document.sensitivity not exists) OR (document.sensitivity exists AND user.clearance_level >= 5)"
+
+default: deny
+
+# ============================================================================
+# Performance Notes
+# ============================================================================
+#
+# OR logic has minimal performance impact:
+# - Simple OR (2 conditions): ~1μs overhead
+# - Complex OR (5 conditions): ~3μs overhead
+# - Maintains 340K+ QPS throughput
+#
+# Best Practices:
+# 1. Use parentheses for clarity, even when not strictly required
+# 2. Place most likely condition first in OR chains (short-circuit evaluation)
+# 3. Combine related conditions in a single OR expression
+# 4. Use OR within condition strings, not across multiple condition strings
+# 5. Keep nesting depth reasonable (< 5 levels) for readability
+#
+# ============================================================================
+# Operator Precedence
+# ============================================================================
+#
+# OR has lower precedence than AND, so:
+#   A AND B OR C  →  (A AND B) OR C
+#
+# For clarity, always use parentheses:
+#   (A AND B) OR C  ✅ Clear
+#   A AND B OR C    ⚠️  Ambiguous
+#
+# ============================================================================
+# Backward Compatibility
+# ============================================================================
+#
+# All v0.2.0 policies work unchanged in v0.3.0.
+# Simple conditions without OR/AND are still supported:
+#
+# rules:
+#   - name: "simple-access"
+#     allow:
+#       conditions:
+#         - "user.department == document.department"  # Still works!
+#

@@ -1,0 +1,24 @@
+# RAGGuard Kubernetes Example Application Requirements
+
+# Core dependencies
+ragguard>=0.1.0
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.0.0
+
+# Vector database clients (install based on your backend)
+qdrant-client>=1.7.0  # For Qdrant
+psycopg2-binary>=2.9.9  # For pgvector
+sqlalchemy>=2.0.0  # For pgvector
+pgvector>=0.2.0  # For pgvector
+
+# Optional: Additional backends
+# chromadb>=0.4.0  # For ChromaDB
+# pinecone-client>=3.0.0  # For Pinecone
+# weaviate-client>=3.25.0  # For Weaviate
+
+# Health checks and monitoring
+requests>=2.31.0
+
+# Logging
+python-json-logger>=2.0.0

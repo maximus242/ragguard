@@ -1,0 +1,9 @@
+{
+  "query": "Show recent patient visits",
+  "user": {
+    "id": "dr.williams@hospital.com",
+    "roles": ["doctor"],
+    "department": "cardiology"
+  },
+  "limit": 3
+}

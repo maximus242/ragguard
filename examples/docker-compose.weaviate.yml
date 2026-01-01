@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  weaviate:
+    image: semitechnologies/weaviate:latest
+    ports:
+      - "8080:8080"  # REST API
+      - "50051:50051"  # gRPC API
+    environment:
+      QUERY_DEFAULTS_LIMIT: 25
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
+      PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
+      DEFAULT_VECTORIZER_MODULE: 'none'
+      ENABLE_MODULES: ''
+      CLUSTER_HOSTNAME: 'node1'
+    volumes:
+      - weaviate_data:/var/lib/weaviate
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/v1/.well-known/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ragguard
+
+  # Example Python app using RAGGuard with Weaviate
+  ragguard-app:
+    build:
+      context: ../
+      dockerfile: examples/Dockerfile.example
+    depends_on:
+      weaviate:
+        condition: service_healthy
+    environment:
+      - WEAVIATE_HOST=http://weaviate:8080
+      - POLICY_FILE=/app/examples/policies/example_policy.yaml
+    volumes:
+      - ../:/app
+    networks:
+      - ragguard
+    command: python examples/quickstart_weaviate.py
+
+volumes:
+  weaviate_data:
+
+networks:
+  ragguard:
+    driver: bridge

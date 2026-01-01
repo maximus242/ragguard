@@ -1,0 +1,8 @@
+{
+  "query": "Show all patient records",
+  "user": {
+    "id": "admin.brown@hospital.com",
+    "roles": ["admin"]
+  },
+  "limit": 5
+}

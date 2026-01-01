@@ -1,0 +1,56 @@
+version: "1"
+
+# HIPAA-Compliant Access Control Policy
+# This policy implements the principle of "minimum necessary" access
+# as required by HIPAA Privacy Rule
+
+rules:
+  # Rule 1: Patients can only access their own medical records
+  - name: "patient-own-records"
+    allow:
+      roles: ["patient"]
+      conditions:
+        - user.patient_id == document.patient_id
+    # Logs: patient accessing their own records
+
+  # Rule 2: Doctors can access records of their assigned patients
+  - name: "doctor-assigned-patients"
+    allow:
+      roles: ["doctor"]
+      conditions:
+        - user.id == document.assigned_doctor
+    # Logs: doctor accessing assigned patient records
+
+  # Rule 3: Nurses can access patients in their assigned department
+  - name: "nurse-department-access"
+    allow:
+      roles: ["nurse"]
+      conditions:
+        - user.department == document.department
+    # Logs: nurse accessing department patient records
+
+  # Rule 4: Admin staff have full access (all access is audited)
+  - name: "admin-full-access"
+    allow:
+      roles: ["admin", "system_admin"]
+    # Logs: administrative access (requires justification in audit)
+
+  # Rule 5: Research staff can access de-identified records only
+  - name: "research-deidentified"
+    match:
+      deidentified: true
+    allow:
+      roles: ["researcher"]
+    # Logs: research access to de-identified data
+
+  # Rule 6: Billing staff can access billing-related records
+  - name: "billing-access"
+    match:
+      record_type: "billing"
+    allow:
+      roles: ["billing"]
+    # Logs: billing staff accessing financial records
+
+default: deny
+# HIPAA requires explicit permissions - deny everything by default
+# All denied access attempts are logged for security auditing
